@@ -19,7 +19,7 @@ library(survey)
 ## Read NYC HANES
 
 ```{r}
-pbde <- read_csv("./Data/pbde_nyc.csv") %>% 
+pbde <- read_csv("./Data/PBDE Data/pbde_nyc.csv") %>% 
     mutate(sp_id = as.character(sp_id)) %>% 
     mutate(pbde_183 = as.numeric(pbde_183)) %>% 
     mutate(pbde_154 = as.numeric(pbde_154)) 

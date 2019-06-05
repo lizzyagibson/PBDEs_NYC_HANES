@@ -57,7 +57,7 @@ Not available publically. DUA with DOHMH.
 ### Load
 
 ```{r}
-analytes <- read_csv("./Data/pbde_nychanes.csv", na = "N.D") %>% clean_names() %>% 
+analytes <- read_csv("./Data/PBDE Data/pbde_nychanes.csv", na = "N.D") %>% clean_names() %>% 
     mutate(key = as.character(id_number_2)) %>% 
     mutate(pbde_183 = as.numeric(pbde_183)) %>% 
     mutate(pbde_154 = as.numeric(pbde_154)) %>% 
@@ -168,6 +168,6 @@ pbde
 
 
 ```{r}
-#write_csv(pbde, "./Data/pbde_nyc.csv")
+#write_csv(pbde, "./Data/PBDE Data/pbde_nyc.csv")
 ```
 

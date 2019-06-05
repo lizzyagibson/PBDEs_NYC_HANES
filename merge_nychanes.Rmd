@@ -1,0 +1,173 @@
+---
+title: "NYC HANES 2004"
+author: "Lizzy Gibson"
+date: "January 22, 2019"
+output: 
+  html_document:
+   toc: TRUE
+   toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(haven)
+library(janitor)
+```
+
+## Public Data
+
+### Load
+
+Publically available data [here.](https://www1.nyc.gov/site/doh/data/data-sets/new-york-city-health-and-nutrition-examination-survey-documentation.page)
+
+```{r}
+spfile <- read_sas("./Data/spfile.sas7bdat") %>% clean_names()
+acasi <- read_sas("./Data/acasi.sas7bdat") %>% clean_names()
+capi <- read_sas("./Data/capi.sas7bdat") %>% clean_names()
+cidi <- read_sas("./Data/cidi.sas7bdat") %>% clean_names()
+exam <- read_sas("./Data/exam.sas7bdat") %>% clean_names()
+labs <- read_sas("./Data/labs.sas7bdat") %>% clean_names()
+```
+
+### Merge
+
+```{r}
+nychanes <- left_join(spfile, acasi, by = "sp_id") %>% #Audio Computer-Assisted Personal SelfInterview
+  left_join(., capi, by = "sp_id") %>% #Computer-Assisted Personal Interview
+  left_join(., cidi, by = c("sp_id", "wtsf1c", "wtsf1ch", "wtsf1f", "racewt",
+                            "agegroup", "ageadj", "agewt", "race_eth", "riagendr", "riaageyr",
+                            "capistat", "capicmt", "capicmto",
+                            "dmq140", "sfq180", "dmq105", "dmq111e", "dmq111f", "dmq130e", "dmq130f",
+                            "dmq161m", "dmq161y", "dmq251a", "dmq251c", "dmq251d", "dmq251e", "dmq251f", 
+                            "dmq251i", "dmq251j", "dmq251k", "dmq251ae", "dmq251af", "dmq251ol", "dmq251os", 
+                            "acasstat", "acasicmt", "acascmto", "cidistat", "cidicmt", "cidicmto", "stratum", "psu")) %>% #Composite International Diagnostic Interview
+  left_join(., exam, by = "sp_id") %>% #Physical exam
+  left_join(., labs, by = "sp_id") %>% #Urine and blood
+    mutate(sp_id = as.character(sp_id))
+
+nychanes
+```
+
+## PBDE Data
+
+Not available publically. DUA with DOHMH.
+
+### Load
+
+```{r}
+analytes <- read_csv("./Data/pbde_nychanes.csv", na = "N.D") %>% clean_names() %>% 
+    mutate(key = as.character(id_number_2)) %>% 
+    mutate(pbde_183 = as.numeric(pbde_183)) %>% 
+    mutate(pbde_154 = as.numeric(pbde_154)) %>% 
+    mutate(sp_id = str_replace(key, "505$|500$", "")) %>%
+    mutate(pbdes_measured = "yes")
+
+length(unique(analytes$key))
+
+analytes$sp_id
+```
+
+### Remove Repeat Obs
+
+* 6 specimens were measured 3 times each.
+* Remove 2nd and 3rd test results for each.
+
+```{r}
+analytes %>% filter(sp_id %in% c("873456", "471540", "975073", "288218", "994027", "794996"))
+
+analytes <- analytes %>% distinct(sp_id, .keep_all = TRUE)
+
+analytes
+```
+
+### Merge
+
+```{r}
+pbde0 <- right_join(analytes, nychanes, by = "sp_id")
+
+pbde0 %>% filter(pbdes_measured != 0)
+
+full_join(analytes, nychanes, by = "sp_id") %>% filter(is.na(racewt)) %>% 
+  select(sp_id, id_number_1, id_number_2, key, pbdes_measured)
+```
+
+### Adjust for Non-Response
+
+* For non-fasting laboratory test, use the clinic-only weight (n= 1,861)
+
+1. Create weight for non-response adjustment (i.e., those with PBDEs measured)
+    * Set the initial weight variable of the outcome. This variable will be adjusted for non-response.
+    * Initial weight. This is the first crucial step in adjusting for non-response. Set the weight to zero for cases that will not be included in the analysis (that is, cases with a missing value for pbde measurement).
+    * Set the weight to the identified appropriate weight for cases that will be included in the analysis. (here, the clinic only weight.)
+
+```{r}
+pbde0 <- pbde0 %>% mutate(pbde_Wt = ifelse(is.na(pbdes_measured), 0, wtsf1ch))
+```
+
+2. Create a new dataset called samplewts, in which you sum the initial pbde weight by age, sex, race/ethnicity.
+3. Create a new variable called samplewt (this will be the sum of the initial pbde weight for all observations by age, sex, and race/ethnicity).
+
+```{r}
+samplewts <- pbde0 %>% 
+  group_by(agewt, racewt, riagendr) %>% 
+  summarise(samplewt = sum(pbde_Wt),
+            freq = n())
+
+samplewts
+```
+
+4. Download control totals -- this dataset contain reference totals for each of the five survey weights.
+
+```{r}
+controls <- read_sas("./Data/clinic_only_con_tots.sas7bdat") %>% clean_names()
+
+controls
+controls %>% summarise(sum(clinic_control_total))
+```
+
+5. Merge the dataset that contains weight control totals with the dataset of summed weights (from the analytic dataset), and create weight factor.
+
+```{r}
+wtfactor <- full_join(samplewts, controls, by = c("riagendr", "agewt", "racewt")) %>% 
+  mutate(wt_factor_pbde = clinic_control_total/samplewt) %>% # weight factor
+  select(-freq, -samplewt, -clinic_control_total)
+  
+wtfactor
+```
+
+6. Merge the new weight factor dataset and your analytic dataset. Create the weight for your analysis by multiplying the weights of participants with non-missing data by the weight factor.
+
+```{r}
+pbde <- left_join(pbde0, wtfactor, by = c("riagendr", "agewt", "racewt")) %>% 
+  mutate(pbde_wt_new = pbde_Wt * wt_factor_pbde) %>% # Adjusted PBDE Weight
+  mutate(wt_pbde = ifelse(pbde_wt_new == 0, "No", "Yes")) # Adjusted PBDE Weight Indicator (wt_pbde)
+```
+
+7. Make sure your adjusted weight is defined for all the cases included in the analysis. Make sure the total weighted frequency is the total population represented by NYC HANES, and the gender distribution matches that of the survey.
+
+* Weights are adjusted so that: 2004 weighted sample size = 5,827,719
+
+```{r}
+table(pbde$wt_pbde)
+
+controls %>% summarise(sum(clinic_control_total))
+pbde %>% summarise(sum(pbde_wt_new))
+
+table(pbde$wt_pbde, pbde$riagendr)
+```
+
+8. Restrict to those with PBDEs measured.
+
+```{r}
+pbde <- pbde %>% filter(pbdes_measured != 0)
+
+pbde
+```
+
+
+```{r}
+#write_csv(pbde, "./Data/pbde_nyc.csv")
+```
+

@@ -1,0 +1,150 @@
+---
+title: "NYC HANES 2004"
+author: "Lizzy Gibson"
+date: "2/11/2019"
+  html_document:
+   toc: TRUE
+   toc_float: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(haven)
+library(janitor)
+library(survey)
+```
+
+## Read NYC HANES
+
+```{r}
+pbde <- read_csv("./Data/pbde_nyc.csv") %>% 
+    mutate(sp_id = as.character(sp_id)) %>% 
+    mutate(pbde_183 = as.numeric(pbde_183)) %>% 
+    mutate(pbde_154 = as.numeric(pbde_154)) 
+
+pbde
+```
+
+## Create Survey Design Object
+
+```{r}
+pbde.svy <- svydesign(ids = ~psu , strata = ~stratum, weights = ~pbde_wt_new, nest = TRUE, data = pbde)
+```
+
+## Descriptive Stats
+
+### Histograms
+
+```{r}
+svyhist(~pbde_28, des = pbde.svy)
+svyhist(~pbde_47, des = pbde.svy)
+svyhist(~pbde_99, des = pbde.svy)
+svyhist(~pbde_100, des = pbde.svy)
+svyhist(~pbde_153, des = pbde.svy)
+svyhist(~pbde_154, des = pbde.svy)
+svyhist(~pbde_183, des = pbde.svy)
+
+summary(pbde$pbde_154)
+summary(pbde$pbde_183)
+```
+
+### Distributions
+
+```{r}
+svymean(~pbde_28, des = pbde.svy, na.rm = TRUE)
+svyquantile(~pbde_28, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+
+svymean(~pbde_47, des = pbde.svy, na.rm = TRUE)
+svyquantile(~pbde_47, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+
+svymean(~pbde_99, des = pbde.svy, na.rm = TRUE)
+svyquantile(~pbde_99, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+
+svymean(~pbde_100, des = pbde.svy, na.rm = TRUE)
+svyquantile(~pbde_100, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+
+svymean(~pbde_153, des = pbde.svy, na.rm = TRUE)
+svyquantile(~pbde_153, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+```
+
+### By Sex
+
+```{r}
+svyby(~pbde_28, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_28, ~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+svyttest(pbde_28~riagendr, pbde.svy)
+summary(svyglm(pbde_28~as.factor(riagendr), pbde.svy, family=gaussian))
+
+svyby(~pbde_47, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_47, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+svyttest(pbde_47~riagendr, pbde.svy)
+summary(svyglm(pbde_47~as.factor(riagendr), pbde.svy, family = gaussian))
+
+svyby(~pbde_99, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_99, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+svyttest(pbde_99~riagendr, pbde.svy)
+summary(svyglm(pbde_99~as.factor(riagendr), pbde.svy, family = gaussian))
+
+svyby(~pbde_100, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_100, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+svyttest(pbde_100~riagendr, pbde.svy)
+summary(svyglm(pbde_100~as.factor(riagendr), pbde.svy, family = gaussian))
+
+svyby(~pbde_153, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_153, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+svyttest(pbde_153~riagendr, pbde.svy)
+summary(svyglm(pbde_153~as.factor(riagendr), pbde.svy, family = gaussian))
+```
+
+T test and linear regression should (do) agree.
+
+### By Race/Ethnicity
+
+```{r}
+svyby(~pbde_28, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_28, ~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_28~as.factor(race_eth), pbde.svy, family = gaussian))
+
+svyby(~pbde_47, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_47, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_47~as.factor(race_eth), pbde.svy, family = gaussian))
+
+svyby(~pbde_99, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_99, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_99~as.factor(race_eth), pbde.svy, family = gaussian))
+
+svyby(~pbde_100, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_100, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_100~as.factor(race_eth), pbde.svy, family = gaussian))
+
+svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_153~as.factor(race_eth), pbde.svy, family = gaussian))
+```
+
+### By Age Group
+
+```{r}
+svyby(~pbde_28, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_28, ~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_28~as.factor(agegroup), pbde.svy, family = gaussian))
+
+svyby(~pbde_47, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_47, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_47~as.factor(agegroup), pbde.svy, family = gaussian))
+
+svyby(~pbde_99, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_99, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_99~as.factor(agegroup), pbde.svy, family = gaussian))
+
+svyby(~pbde_100, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_100, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_100~as.factor(agegroup), pbde.svy, family = gaussian))
+
+svyby(~pbde_153, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+svyby(~pbde_153, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+summary(svyglm(pbde_153~as.factor(agegroup), pbde.svy, family = gaussian))
+```
+

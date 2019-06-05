@@ -43,108 +43,176 @@ svyhist(~pbde_47, des = pbde.svy)
 svyhist(~pbde_99, des = pbde.svy)
 svyhist(~pbde_100, des = pbde.svy)
 svyhist(~pbde_153, des = pbde.svy)
-svyhist(~pbde_154, des = pbde.svy)
-svyhist(~pbde_183, des = pbde.svy)
 
-summary(pbde$pbde_154)
-summary(pbde$pbde_183)
+summary(pbde$pbde_154) # Never measured, ignore
+summary(pbde$pbde_183) # Never measured, ignore
 ```
 
 ### Distributions
 
 ```{r}
-svymean(~pbde_28, des = pbde.svy, na.rm = TRUE)
-svyquantile(~pbde_28, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+mean_28 <- svymean(~pbde_28, des = pbde.svy, na.rm = TRUE)
+quant_28 <- svyquantile(~pbde_28, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+dist_28 <- cbind(mean = mean_28, confint(mean_28), se = SE(mean_28), quant_28)
 
-svymean(~pbde_47, des = pbde.svy, na.rm = TRUE)
-svyquantile(~pbde_47, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+mean_47 <- svymean(~pbde_47, des = pbde.svy, na.rm = TRUE)
+quant_47 <- svyquantile(~pbde_47, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+dist_47 <- cbind(mean = mean_47, confint(mean_47), se = SE(mean_47), quant_47)
 
-svymean(~pbde_99, des = pbde.svy, na.rm = TRUE)
-svyquantile(~pbde_99, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+mean_99 <- svymean(~pbde_99, des = pbde.svy, na.rm = TRUE)
+quant_99 <- svyquantile(~pbde_99, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+dist_99 <- cbind(mean = mean_99, confint(mean_99), se = SE(mean_99), quant_99)
 
-svymean(~pbde_100, des = pbde.svy, na.rm = TRUE)
-svyquantile(~pbde_100, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+mean_100 <- svymean(~pbde_100, des = pbde.svy, na.rm = TRUE)
+quant_100 <- svyquantile(~pbde_100, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+dist_100 <- cbind(mean = mean_100, confint(mean_100), se = SE(mean_100), quant_100)
 
-svymean(~pbde_153, des = pbde.svy, na.rm = TRUE)
-svyquantile(~pbde_153, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+mean_153 <- svymean(~pbde_153, des = pbde.svy, na.rm = TRUE)
+quant_153 <- svyquantile(~pbde_153, des = pbde.svy, na.rm = TRUE, quantiles = c(0, .25,.5,.75, 1))
+dist_153 <- cbind(mean = mean_153, confint(mean_153), se = SE(mean_153), quant_153)
+```
+
+```{r}
+rbind(dist_28, dist_47, dist_99, dist_100, dist_153) %>% 
+  cbind(., c("PBDE 28", "PBDE 47", "PBDE 99", "PBDE 100", "PBDE 153")) %>% 
+  as_tibble() %>% 
+  rename(se = pbde_28, lower = `2.5 %`, upper = `97.5 %`, min = `0`, q1 = `0.25`, 
+         median = `0.5`, q3 = `0.75`, max = `1`, se = pbde_28) %>% 
+  select(congener = V10, everything()) %>% 
+  mutate_at(vars(2:10), as.numeric)
 ```
 
 ### By Sex
 
 ```{r}
-svyby(~pbde_28, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_28, ~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+sex_mean_28 <- svyby(~pbde_28, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+sex_quant_28 <- svyby(~pbde_28, ~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 svyttest(pbde_28~riagendr, pbde.svy)
 summary(svyglm(pbde_28~as.factor(riagendr), pbde.svy, family=gaussian))
+sex_28 <- cbind(sex_mean_28, confint(sex_mean_28), se = SE(mean_28), sex_quant_28) %>% as.matrix()
 
-svyby(~pbde_47, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_47, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+sex_mean_47 <- svyby(~pbde_47, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+sex_quant_47 <- svyby(~pbde_47, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 svyttest(pbde_47~riagendr, pbde.svy)
 summary(svyglm(pbde_47~as.factor(riagendr), pbde.svy, family = gaussian))
+sex_47 <- cbind(mean = sex_mean_47, confint(sex_mean_47), se = SE(mean_47), sex_quant_47) %>% as.matrix()
 
-svyby(~pbde_99, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_99, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+sex_mean_99 <- svyby(~pbde_99, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+sex_quant_99 <- svyby(~pbde_99, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 svyttest(pbde_99~riagendr, pbde.svy)
 summary(svyglm(pbde_99~as.factor(riagendr), pbde.svy, family = gaussian))
+sex_99 <- cbind(mean = sex_mean_99, confint(sex_mean_99), se = SE(mean_99), sex_quant_99) %>% as.matrix()
 
-svyby(~pbde_100, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_100, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+sex_mean_100 <- svyby(~pbde_100, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+sex_quant_100 <- svyby(~pbde_100, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 svyttest(pbde_100~riagendr, pbde.svy)
 summary(svyglm(pbde_100~as.factor(riagendr), pbde.svy, family = gaussian))
+sex_100 <- cbind(mean = sex_mean_100, confint(sex_mean_100), se = SE(mean_100), sex_quant_100) %>% as.matrix()
 
-svyby(~pbde_153, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_153, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+sex_mean_153 <- svyby(~pbde_153, by=~riagendr, pbde.svy, na.rm = TRUE, svymean)
+sex_quant_153 <- svyby(~pbde_153, by=~riagendr, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 svyttest(pbde_153~riagendr, pbde.svy)
 summary(svyglm(pbde_153~as.factor(riagendr), pbde.svy, family = gaussian))
+sex_153 <- cbind(mean = sex_mean_153, confint(sex_mean_153), se = SE(mean_153), sex_quant_153) %>% as.matrix()
 ```
 
 T test and linear regression should (do) agree.
 
+```{r}
+rbind(sex_28, sex_47, sex_99, sex_100, sex_153) %>% 
+  cbind(., c("PBDE 28", "PBDE 28","PBDE 47", "PBDE 47", "PBDE 99", "PBDE 99", 
+             "PBDE 100", "PBDE 100", "PBDE 153", "PBDE 153")) %>% 
+  as_tibble() %>% 
+  rename(mean = pbde_28, lower = `2.5 %`, upper = `97.5 %`, min = `0`, q1 = `0.25`, 
+         median = `0.5`, q3 = `0.75`, max = `1`) %>% 
+  select(congener = V18, riagendr, everything()) %>%
+  select(-se.0, -se.0.25, -se.0.5, -se.0.75, -se.1, -V7, -V6) %>% # Drop repeat sex var and INCORRECT SE.
+  mutate_at(vars(3:11), as.numeric)
+```
+
 ### By Race/Ethnicity
 
 ```{r}
-svyby(~pbde_28, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_28, ~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+eth_mean_28 <- svyby(~pbde_28, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+eth_quant_28 <- svyby(~pbde_28, ~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+#need at least two non-NA values to interpolate
 summary(svyglm(pbde_28~as.factor(race_eth), pbde.svy, family = gaussian))
+eth_28 <- cbind(eth_mean_28, confint(eth_mean_28), se = SE(mean_28), eth_quant_28) %>% as.matrix()
 
-svyby(~pbde_47, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_47, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+eth_mean_47 <- svyby(~pbde_47, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+eth_quant_47 <- svyby(~pbde_47, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_47~as.factor(race_eth), pbde.svy, family = gaussian))
+eth_47 <- cbind(eth_mean_47, confint(eth_mean_47), se = SE(mean_47), eth_quant_47) %>% as.matrix()
 
-svyby(~pbde_99, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_99, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+eth_mean_99 <- svyby(~pbde_99, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+eth_quant_99 <- svyby(~pbde_99, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_99~as.factor(race_eth), pbde.svy, family = gaussian))
+eth_99 <- cbind(eth_mean_99, confint(eth_mean_99), se = SE(mean_99), eth_quant_99) %>% as.matrix()
 
-svyby(~pbde_100, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_100, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+eth_mean_100 <- svyby(~pbde_100, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+eth_quant_100 <- svyby(~pbde_100, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_100~as.factor(race_eth), pbde.svy, family = gaussian))
+eth_100 <- cbind(eth_mean_100, confint(eth_mean_100), se = SE(mean_100), eth_quant_100) %>% as.matrix()
 
-svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+eth_mean_153 <- svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
+#eth_quant_153 <- svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+# need at least two non-NA values to interpolate
 summary(svyglm(pbde_153~as.factor(race_eth), pbde.svy, family = gaussian))
+eth_153 <- cbind(eth_mean_153, confint(eth_mean_153), se = SE(mean_153), eth_quant_153) %>% as.matrix()
+```
+
+```{r}
+rbind(eth_28, eth_47, eth_99, eth_100, eth_153) %>% 
+  cbind(., c("PBDE 28", "PBDE 28","PBDE 47", "PBDE 47", "PBDE 99", "PBDE 99", 
+             "PBDE 100", "PBDE 100", "PBDE 153", "PBDE 153")) %>% 
+  as_tibble() %>% 
+  rename(mean = pbde_28, lower = `2.5 %`, upper = `97.5 %`, min = `0`, q1 = `0.25`, 
+         median = `0.5`, q3 = `0.75`, max = `1`) %>% 
+  select(congener = V18, riagendr, everything()) %>%
+  select(-se.0, -se.0.25, -se.0.5, -se.0.75, -se.1, -V7, -V6) %>% # Drop repeat sex var and INCORRECT SE.
+  mutate_at(vars(3:11), as.numeric)
 ```
 
 ### By Age Group
 
 ```{r}
-svyby(~pbde_28, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_28, ~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+age_mean_28 <- svyby(~pbde_28, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+age_quant_28 <- svyby(~pbde_28, ~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_28~as.factor(agegroup), pbde.svy, family = gaussian))
+age_28 <- cbind(age_mean_28, confint(age_mean_28), se = SE(mean_28), age_quant_28) %>% as.matrix()
 
-svyby(~pbde_47, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_47, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+age_mean_47 <- svyby(~pbde_47, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+age_quant_47 <- svyby(~pbde_47, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_47~as.factor(agegroup), pbde.svy, family = gaussian))
+age_47 <- cbind(age_mean_47, confint(age_mean_47), se = SE(mean_47), age_quant_47) %>% as.matrix()
 
-svyby(~pbde_99, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_99, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+age_mean_99 <- svyby(~pbde_99, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+age_quant_99 <- svyby(~pbde_99, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_99~as.factor(agegroup), pbde.svy, family = gaussian))
+age_99 <- cbind(age_mean_99, confint(age_mean_99), se = SE(mean_99), age_quant_99) %>% as.matrix()
 
-svyby(~pbde_100, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_100, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+age_mean_100 <- svyby(~pbde_100, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+age_quant_100 <- svyby(~pbde_100, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_100~as.factor(agegroup), pbde.svy, family = gaussian))
+age_100 <- cbind(age_mean_100, confint(age_mean_100), se = SE(mean_100), age_quant_100) %>% as.matrix()
 
-svyby(~pbde_153, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
-svyby(~pbde_153, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+age_mean_153 <- svyby(~pbde_153, by=~agegroup, pbde.svy, na.rm = TRUE, svymean)
+age_quant_153 <- svyby(~pbde_153, by=~agegroup, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 summary(svyglm(pbde_153~as.factor(agegroup), pbde.svy, family = gaussian))
+age_153 <- cbind(age_mean_153, confint(age_mean_153), se = SE(mean_153), age_quant_153) %>% as.matrix()
 ```
 
+```{r}
+rbind(age_28, age_47, age_99, age_100, age_153) %>% 
+  cbind(., c("PBDE 28", "PBDE 28", "PBDE 28", "PBDE 28", "PBDE 28",
+             "PBDE 47", "PBDE 47", "PBDE 47", "PBDE 47", "PBDE 47",
+             "PBDE 99", "PBDE 99", "PBDE 99", "PBDE 99", "PBDE 99", 
+             "PBDE 100", "PBDE 100", "PBDE 100", "PBDE 100", "PBDE 100",
+             "PBDE 153", "PBDE 153", "PBDE 153", "PBDE 153", "PBDE 153")) %>% 
+  as_tibble() %>% 
+  rename(mean = pbde_28, lower = `2.5 %`, upper = `97.5 %`, min = `0`, q1 = `0.25`, 
+         median = `0.5`, q3 = `0.75`, max = `1`) %>% 
+  select(congener = V18, agegroup, everything()) %>%
+  select(-se.0, -se.0.25, -se.0.5, -se.0.75, -se.1, -V7, -V6) %>% # Drop repeat age var and INCORRECT SE.
+  mutate_at(vars(3:11), as.numeric)
+```

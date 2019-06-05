@@ -1,0 +1,80 @@
+---
+title: "NYC HANES 2004"
+author: "Lizzy Gibson"
+date: "6/5/2019"
+output:
+  html_document:
+   toc: TRUE
+   toc_float: TRUE
+header-includes:
+- \usepackage{placeins}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(haven)
+library(janitor)
+library(survey)
+library(kableExtra)
+```
+
+## Read NYC HANES
+
+```{r}
+pbde <- read_csv("./Data/PBDE Data/pbde_nyc.csv") %>% 
+    mutate(sp_id = as.character(sp_id)) %>% 
+    mutate(pbde_183 = as.numeric(pbde_183)) %>% 
+    mutate(pbde_154 = as.numeric(pbde_154)) 
+
+pbde
+```
+
+## Below the Limit of Detection
+
+|                          	|	PBDE 28	| PBDE 47	| PBDE 99  	| PBDE 100 | PBDE 154	| PBDE 153	| PBDE 183 |
+|---------------------------|---------|---------|-----------|----------|----------|-----------|----------|
+|MDL (ng/ml)	              |	0.03  	| 0.03    |	0.03      |	0.03  	 | 0.04	    | 0.03      |	0.04     |
+|MRL = 3*MDL (=LOQ) (ng/ml)	|	0.10	  | 0.09    |	0.09	    | 0.09	   | 0.11	    | 0.10	    | 0.11     |
+
+### LOD / sqrt(2)
+
+```{r}
+pbde <- pbde %>% 
+  mutate(pbde_28 = ifelse(is.na(pbde_28), 0.03/sqrt(2), pbde_28)) %>% 
+  mutate(pbde_47 = ifelse(is.na(pbde_47), 0.03/sqrt(2), pbde_47)) %>% 
+  mutate(pbde_99 = ifelse(is.na(pbde_99), 0.03/sqrt(2), pbde_99)) %>% 
+  mutate(pbde_100 = ifelse(is.na(pbde_100), 0.03/sqrt(2), pbde_100)) %>% 
+  mutate(pbde_153 = ifelse(is.na(pbde_153), 0.03/sqrt(2), pbde_153)) %>% 
+  mutate(detect_28 = ifelse(pbde_28 == 0.03/sqrt(2), 0, 1)) %>% 
+  mutate(detect_47 = ifelse(pbde_47 == 0.03/sqrt(2), 0, 1)) %>% 
+  mutate(detect_99 = ifelse(pbde_99 == 0.03/sqrt(2), 0, 1)) %>% 
+  mutate(detect_100 = ifelse(pbde_100 == 0.03/sqrt(2), 0, 1)) %>% 
+  mutate(detect_153 = ifelse(pbde_153 == 0.03/sqrt(2), 0, 1))
+```
+
+```{r}
+detect_pbde <- pbde %>% 
+  select(sp_id, detect_28, detect_47, detect_99, detect_100, detect_153) %>% 
+  gather(Congeners, Detection, -sp_id) %>% 
+  mutate(Detection = as.factor(Detection)) %>% 
+  select(-sp_id) %>% 
+  group_by(Congeners) %>%
+  count(Detection) %>% 
+  mutate(Detection = case_when(Detection == 0 ~ "BLOD",
+                          Detection == 1 ~ "Detected")) %>% 
+  group_by(Congeners, Detection) %>% 
+  summarise(N = sum(n)) %>% 
+  spread(Detection, N)
+
+detect_pbde %>% 
+  mutate(P_Detected = round(Detected/(BLOD + Detected), 2),
+         P_BLOD = round(BLOD/(BLOD + Detected), 2))
+```
+
+## Create Survey Design Object
+
+```{r}
+pbde.svy <- svydesign(ids = ~psu , strata = ~stratum, weights = ~pbde_wt_new, nest = TRUE, data = pbde)
+```

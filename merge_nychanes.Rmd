@@ -155,7 +155,13 @@ table(pbde$wt_pbde)
 controls %>% summarise(sum(clinic_control_total))
 pbde %>% summarise(sum(pbde_wt_new))
 
-table(pbde$wt_pbde, pbde$riagendr)
+table(pbde$riagendr)
+table(pbde$riagendr)/nrow(pbde)
+
+#Survey object is defined in analze RMD
+#100*(svymean(~as.factor(riagendr), pbde.svy))
+#             1         2
+# Yes 0.4133811 0.5866189
 ```
 
 8. Restrict to those with PBDEs measured.

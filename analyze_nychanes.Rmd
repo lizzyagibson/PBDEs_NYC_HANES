@@ -116,7 +116,7 @@ summary(svyglm(pbde_153~as.factor(riagendr), pbde.svy, family = gaussian))
 sex_153 <- cbind(mean = sex_mean_153, confint(sex_mean_153), se = SE(mean_153), sex_quant_153) %>% as.matrix()
 ```
 
-T test and linear regression should (do) agree.
+T test and linear regression should (and do) agree.
 
 ```{r}
 rbind(sex_28, sex_47, sex_99, sex_100, sex_153) %>% 
@@ -155,7 +155,7 @@ summary(svyglm(pbde_100~as.factor(race_eth), pbde.svy, family = gaussian))
 eth_100 <- cbind(eth_mean_100, confint(eth_mean_100), se = SE(mean_100), eth_quant_100) %>% as.matrix()
 
 eth_mean_153 <- svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svymean)
-#eth_quant_153 <- svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
+eth_quant_153 <- svyby(~pbde_153, by=~race_eth, pbde.svy, na.rm = TRUE, svyquantile, quantiles = c(0, .25,.5,.75, 1), ci=TRUE)
 # need at least two non-NA values to interpolate
 summary(svyglm(pbde_153~as.factor(race_eth), pbde.svy, family = gaussian))
 eth_153 <- cbind(eth_mean_153, confint(eth_mean_153), se = SE(mean_153), eth_quant_153) %>% as.matrix()
@@ -163,15 +163,19 @@ eth_153 <- cbind(eth_mean_153, confint(eth_mean_153), se = SE(mean_153), eth_qua
 
 ```{r}
 rbind(eth_28, eth_47, eth_99, eth_100, eth_153) %>% 
-  cbind(., c("PBDE 28", "PBDE 28","PBDE 47", "PBDE 47", "PBDE 99", "PBDE 99", 
-             "PBDE 100", "PBDE 100", "PBDE 153", "PBDE 153")) %>% 
+  cbind(., c("PBDE 28", "PBDE 28", "PBDE 28", "PBDE 28", "PBDE 28",
+             "PBDE 47", "PBDE 47", "PBDE 47", "PBDE 47", "PBDE 47",
+             "PBDE 99", "PBDE 99", "PBDE 99", "PBDE 99", "PBDE 99", 
+             "PBDE 100", "PBDE 100", "PBDE 100", "PBDE 100", "PBDE 100",
+             "PBDE 153", "PBDE 153", "PBDE 153", "PBDE 153", "PBDE 153")) %>% 
   as_tibble() %>% 
   rename(mean = pbde_28, lower = `2.5 %`, upper = `97.5 %`, min = `0`, q1 = `0.25`, 
          median = `0.5`, q3 = `0.75`, max = `1`) %>% 
-  select(congener = V18, riagendr, everything()) %>%
-  select(-se.0, -se.0.25, -se.0.5, -se.0.75, -se.1, -V7, -V6) %>% # Drop repeat sex var and INCORRECT SE.
+  select(congener = V18, race_eth, everything()) %>%
+  select(-se.0, -se.0.25, -se.0.5, -se.0.75, -se.1, -V7, -V6) %>% # Drop repeat age var and INCORRECT SE.
   mutate_at(vars(3:11), as.numeric)
 ```
+
 
 ### By Age Group
 
@@ -216,3 +220,4 @@ rbind(age_28, age_47, age_99, age_100, age_153) %>%
   select(-se.0, -se.0.25, -se.0.5, -se.0.75, -se.1, -V7, -V6) %>% # Drop repeat age var and INCORRECT SE.
   mutate_at(vars(3:11), as.numeric)
 ```
+
